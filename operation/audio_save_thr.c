@@ -5,6 +5,7 @@ const char *dbPath = "./db/audio_capture.db";
 void *save_audio_thread(void *) {
     printf("Save Audio Thread\n");
     int fileIndex;
+    int manualRecordIndex;
     uint64_t timeFound;
     uint64_t timeStart;
     uint64_t timeEnd;
@@ -34,58 +35,80 @@ void *save_audio_thread(void *) {
 
     for (;;) {
         pthread_cond_wait(&audio_cond, &audio_cond_mutex);
+        for (int i = 0; i < samplingSize; i++) {
+            localBuf[i] = audio_buffer[i] << 4;
+            // localBuf[i] = audio_buffer[i];
+        }
         // printf("Found Audio From Thread Save Audio\n");
-        int isAudio = threshold_detect(audio_buffer, samplingSize, 20);
-        if (isAudio) {
-            isCapture = 1;
-            timeFound = timeInMilliseconds();
-            isFound = 1;
-        }
-
-        if (isCapture && bufIndex < DATA_SIZE) {
-            for (int i = 0; i < samplingSize; i++) {
-                localBuf[i] = audio_buffer[i] << 4;
-                // localBuf[i] = audio_buffer[i];
+        if (modeRecord == 0) {
+            int isAudio = threshold_detect(audio_buffer, samplingSize, 20);
+            if (isAudio) {
+                isCapture = 1;
+                timeFound = timeInMilliseconds();
+                isFound = 1;
             }
-            if (fileOpenned) {
-                fwrite(localBuf, 2, samplingSize, audioCaptureFile);
+
+            if (isCapture && bufIndex < DATA_SIZE) {
+
+                if (fileOpenned) {
+                    fwrite(localBuf, 2, samplingSize, audioCaptureFile);
+                }
             }
-        }
 
-        if (!isAudio && timeInMilliseconds() - timeFound > foundTimeout) {
-            isFound = 0;
-        }
+            if (!isAudio && timeInMilliseconds() - timeFound > foundTimeout) {
+                isFound = 0;
+            }
 
-        if (lastIsFound != isFound) {
-
-            if (isFound) {
-                // printf("Hit Above Threshold\n");
-                sprintf(filename, "./captured_audio/capture%d.wav", fileIndex++);
+            if (lastIsFound != isFound) {
+                if (isFound) {
+                    // printf("Hit Above Threshold\n");
+                    sprintf(filename, "./captured_audio/auto_capture_%d.wav", fileIndex++);
+                    printf("Start recording '%s'\n", filename);
+                    audioCaptureFile = fopen(filename, "w");
+                    const int header_length = sizeof(wav_header);
+                    wavh.dlength = bufIndex * wavh.bytes_per_samp;
+                    wavh.flength = wavh.dlength + header_length;
+                    fwrite(&wavh, 1, header_length, audioCaptureFile);
+                    fileOpenned = 1;
+                } else {
+                    printf("Audio Silenced, stop record\n");
+                    if (fileOpenned) {
+                        fclose(audioCaptureFile);
+                        struct stat st;
+                        stat(filename, &st);
+                        char dataSize[20];
+                        sprintf(dataSize, "%ldB", st.st_size);
+                        st.st_size;
+                        insert_value(dbPath, "audio_record", dataSize);
+                    }
+                    // printf("Buff Size %ld\n", bufIndex);
+                    fileOpenned = 0;
+                    bufIndex = 0;
+                    isCapture = 0;
+                    // }
+                }
+                lastIsFound = isFound;
+            }
+        } else if (modeRecord == 1) {
+            if (!fileOpenned) {
+                sprintf(filename, "./captured_audio/command_record_%d.wav", fileIndex++);
                 printf("Start recording '%s'\n", filename);
                 audioCaptureFile = fopen(filename, "w");
                 const int header_length = sizeof(wav_header);
                 wavh.dlength = bufIndex * wavh.bytes_per_samp;
                 wavh.flength = wavh.dlength + header_length;
                 fwrite(&wavh, 1, header_length, audioCaptureFile);
+                fwrite(localBuf, 2, samplingSize, audioCaptureFile);
                 fileOpenned = 1;
-            } else {
-                printf("Audio Silenced, stop record\n");
-                if (fileOpenned) {
-                    fclose(audioCaptureFile);
-                    struct stat st;
-                    stat(filename, &st);
-                    char dataSize[20];
-                    sprintf(dataSize,"%ldB",st.st_size);
-                    st.st_size;
-                    insert_value(dbPath, "audio_record", dataSize);
-                }
-                // printf("Buff Size %ld\n", bufIndex);
-                fileOpenned = 0;
-                bufIndex = 0;
-                isCapture = 0;
-                // }
             }
-            lastIsFound = isFound;
+            if (fileOpenned) {
+                fwrite(localBuf, 2, samplingSize, audioCaptureFile);
+            }
+        } else if (modeRecord == 2) {
+            if (fileOpenned) {
+                fclose(audioCaptureFile);
+            }
+            fileOpenned = 0;
         }
     }
 }

@@ -4,7 +4,7 @@ char serialNumber[100];
 const int samplingSize = 4800;
 const int samplingRate = 48000;
 
-int modeRecord; // 0 auto, 1 record, 2 stop
+int modeRecord = 0; // 0 auto, 1 record, 2 stop
 pthread_cond_t  audio_cond;
 pthread_mutex_t audio_cond_mutex;
 short audio_buffer[9600];

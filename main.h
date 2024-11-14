@@ -9,6 +9,7 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
+extern int modeRecord;
 
 extern pthread_cond_t  audio_cond;
 extern pthread_mutex_t audio_cond_mutex;
