@@ -5,6 +5,7 @@ SRCS = main.c \
        ./telemetry/server_thr.c \
        ./telemetry/client_tcp_thr.c \
        ./telemetry/mqtt_thr.c \
+       ./telemetry/file_upload.c \
 	   ./operation/audio_input_thr.c \
 	   ./operation/audio_save_thr.c \
 	   ./operation/threshold_detect.c \
@@ -15,7 +16,7 @@ SRCS = main.c \
 
 # Application name and libraries
 APP_NAME = implementation
-LIBS = -lm -lpthread -lpaho-mqtt3c -lcjson -lasound -lsqlite3
+LIBS = -lm -lpthread -lpaho-mqtt3c -lcjson -lasound -lsqlite3 -lcurl
 
 # Output folder for compiled object files
 OUT = ./out

@@ -74,6 +74,7 @@ void *save_audio_thread(void *) {
                     printf("Audio Silenced, stop record\n");
                     if (fileOpenned) {
                         fclose(audioCaptureFile);
+
                         struct stat st;
                         stat(filename, &st);
                         char dataSize[20];
@@ -107,6 +108,24 @@ void *save_audio_thread(void *) {
         } else if (modeRecord == 2) {
             if (fileOpenned) {
                 fclose(audioCaptureFile);
+                struct stat st;
+                stat(filename, &st);
+                char dataSize[20];
+                sprintf(dataSize, "%ldB", st.st_size);
+                st.st_size;
+                insert_value(dbPath, "audio_record", dataSize);
+                char buffer[50];
+                time_t raw_time;
+                struct tm *time_info;
+                time(&raw_time);
+                time_info = gmtime(&raw_time);
+                strftime(buffer, 50, "%Y-%m-%dT%H:%M:%SZ", time_info);
+
+                pthread_mutex_lock(&http_cond_mutex);
+                strcpy(httpFilePath, filename);
+                strcpy(httpTimeStamp, buffer);
+                pthread_cond_signal(&http_cond);
+                pthread_mutex_unlock(&http_cond_mutex);
             }
             fileOpenned = 0;
         }
