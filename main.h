@@ -12,6 +12,10 @@
 
 extern int modeRecord;
 
+extern char mqttTransferPayload[512];
+extern pthread_cond_t  mqtt_cond;
+extern pthread_mutex_t mqtt_cond_mutex;
+
 extern pthread_cond_t  audio_cond;
 extern pthread_mutex_t audio_cond_mutex;
 extern pthread_cond_t  http_cond;

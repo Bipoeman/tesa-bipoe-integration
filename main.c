@@ -4,6 +4,10 @@ char serialNumber[100];
 const int samplingSize = 4800;
 const int samplingRate = 48000;
 
+char mqttTransferPayload[512];
+pthread_cond_t  mqtt_cond;
+pthread_mutex_t mqtt_cond_mutex;
+
 int modeRecord = 0; // 0 auto, 1 record, 2 stop
 pthread_cond_t  audio_cond;
 pthread_mutex_t audio_cond_mutex;
@@ -36,6 +40,10 @@ int main(int argc,char **argv){
 
     pthread_mutex_init(&audio_cond_mutex,NULL);
     pthread_cond_init(&audio_cond,NULL);
+    pthread_mutex_init(&http_cond_mutex,NULL);
+    pthread_cond_init(&http_cond,NULL);
+    pthread_mutex_init(&mqtt_cond_mutex,NULL);
+    pthread_cond_init(&mqtt_cond,NULL);
 
     printf("Serial Number of this board is -> %s\n",serialNumber);
 

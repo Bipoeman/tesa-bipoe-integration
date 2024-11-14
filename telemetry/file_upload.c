@@ -5,7 +5,17 @@ void *file_upload_thread(void *) {
         printf("Waiting for file name to upload\n");
         pthread_cond_wait(&http_cond, &http_cond_mutex);
         printf("Uploading...\n");
-        upload_file_to_http(http_server_url, httpFilePath, bearerToken,httpTimeStamp,serialNumber);
+        upload_file_to_http(http_server_url, httpFilePath, bearerToken, httpTimeStamp, serialNumber);
+
+        cJSON *json = cJSON_CreateObject();
+        cJSON_AddStringToObject(json, "report_state", "uploaded_commanded_record");
+        cJSON_AddStringToObject(json, "filename", httpFilePath);
+        pthread_mutex_lock(&mqtt_cond_mutex);
+        strcpy(mqttTransferPayload, cJSON_PrintUnformatted(json));
+        pthread_cond_signal(&mqtt_cond);
+        pthread_mutex_unlock(&mqtt_cond_mutex);
+        cJSON_Delete(json);
+
         printf("Uploaded\n");
     }
 }
@@ -38,8 +48,8 @@ int upload_file_to_http(const char *url, const char *file_path, const char *bear
 
         // Add the file field to the form
         part = curl_mime_addpart(mime);
-        curl_mime_name(part, "file");           // The field name for the file
-        curl_mime_filedata(part, file_path);    // The file to upload
+        curl_mime_name(part, "file");        // The field name for the file
+        curl_mime_filedata(part, file_path); // The file to upload
 
         // Add timestamp as a separate form field
         part = curl_mime_addpart(mime);
@@ -72,9 +82,9 @@ int upload_file_to_http(const char *url, const char *file_path, const char *bear
         }
 
         // Clean up
-        curl_mime_free(mime);                  // Free the mime form
-        curl_easy_cleanup(curl);               // Cleanup curl session
-        curl_slist_free_all(headers);          // Free headers list
+        curl_mime_free(mime);         // Free the mime form
+        curl_easy_cleanup(curl);      // Cleanup curl session
+        curl_slist_free_all(headers); // Free headers list
     } else {
         fprintf(stderr, "Failed to initialize libcurl.\n");
     }

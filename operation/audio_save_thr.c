@@ -39,10 +39,10 @@ void *save_audio_thread(void *) {
             localBuf[i] = audio_buffer[i] << 4;
             // localBuf[i] = audio_buffer[i];
         }
-        int freqDetect = detectSync(localBuf,samplingSize,30);
-        if (freqDetect > 0){
-            if (abs(171 - freqDetect) <= 1){
-                printf("Start Detected %d\n",freqDetect);
+        int freqDetect = detectSync(localBuf, samplingSize, 30);
+        if (freqDetect > 0) {
+            if (abs(171 - freqDetect) <= 1) {
+                printf("Start Detected %d\n", freqDetect);
             }
         }
         // printf("Found Audio From Thread Save Audio\n");
@@ -70,6 +70,16 @@ void *save_audio_thread(void *) {
                     // printf("Hit Above Threshold\n");
                     sprintf(filename, "./captured_audio/auto_capture_%d.wav", fileIndex++);
                     printf("Start recording '%s'\n", filename);
+
+                    cJSON *json = cJSON_CreateObject();
+                    cJSON_AddStringToObject(json, "report_state", "audio_detected");
+                    cJSON_AddStringToObject(json, "filename", filename);
+                    pthread_mutex_lock(&mqtt_cond_mutex);
+                    strcpy(mqttTransferPayload, cJSON_PrintUnformatted(json));
+                    pthread_cond_signal(&mqtt_cond);
+                    pthread_mutex_unlock(&mqtt_cond_mutex);
+                    cJSON_Delete(json);
+
                     audioCaptureFile = fopen(filename, "w");
                     const int header_length = sizeof(wav_header);
                     wavh.dlength = bufIndex * wavh.bytes_per_samp;
@@ -80,6 +90,15 @@ void *save_audio_thread(void *) {
                     printf("Audio Silenced, stop record\n");
                     if (fileOpenned) {
                         fclose(audioCaptureFile);
+
+                        cJSON *json = cJSON_CreateObject();
+                        cJSON_AddStringToObject(json, "report_state", "detected_audio_saved");
+                        cJSON_AddStringToObject(json, "filename", filename);
+                        pthread_mutex_lock(&mqtt_cond_mutex);
+                        strcpy(mqttTransferPayload, cJSON_PrintUnformatted(json));
+                        pthread_cond_signal(&mqtt_cond);
+                        pthread_mutex_unlock(&mqtt_cond_mutex);
+                        cJSON_Delete(json);
 
                         struct stat st;
                         stat(filename, &st);
@@ -107,6 +126,15 @@ void *save_audio_thread(void *) {
                 fwrite(&wavh, 1, header_length, audioCaptureFile);
                 fwrite(localBuf, 2, samplingSize, audioCaptureFile);
                 fileOpenned = 1;
+
+                cJSON *json = cJSON_CreateObject();
+                cJSON_AddStringToObject(json, "report_state", "start_record_command");
+                cJSON_AddStringToObject(json, "filename", filename);
+                pthread_mutex_lock(&mqtt_cond_mutex);
+                strcpy(mqttTransferPayload, cJSON_PrintUnformatted(json));
+                pthread_cond_signal(&mqtt_cond);
+                pthread_mutex_unlock(&mqtt_cond_mutex);
+                cJSON_Delete(json);
             }
             if (fileOpenned) {
                 fwrite(localBuf, 2, samplingSize, audioCaptureFile);
@@ -126,6 +154,15 @@ void *save_audio_thread(void *) {
                 time(&raw_time);
                 time_info = gmtime(&raw_time);
                 strftime(buffer, 50, "%Y-%m-%dT%H:%M:%SZ", time_info);
+
+                cJSON *json = cJSON_CreateObject();
+                cJSON_AddStringToObject(json, "report_state", "stop_record_command");
+                cJSON_AddStringToObject(json, "filename", filename);
+                pthread_mutex_lock(&mqtt_cond_mutex);
+                strcpy(mqttTransferPayload, cJSON_PrintUnformatted(json));
+                pthread_cond_signal(&mqtt_cond);
+                pthread_mutex_unlock(&mqtt_cond_mutex);
+                cJSON_Delete(json);
 
                 pthread_mutex_lock(&http_cond_mutex);
                 strcpy(httpFilePath, filename);

@@ -30,52 +30,20 @@ void *mqtt_thread(void *) {
     setupMQTT(&mqttClient);
     char topic[100];
 
-    sprintf(topic, "%s/%s/%s", base_topic, localSerialNumber, "data");
+    sprintf(topic, "%s/%s/%s", base_topic, localSerialNumber, "status");
     printf("MQTT TOPIC: %s\n", topic);
     MQTTClient_message pubmsg = MQTTClient_message_initializer;
-    while (1) {
-        // loop
-        // float value;
 
-        // // printf("Shared data: %d\n", shared_value);
-        // value = shared_value;
-        // cJSON *json = cJSON_CreateObject();
-        // cJSON_AddStringToObject(json, "team", (char *)"Hello");
-        // cJSON_AddNumberToObject(json, "value", value);
-        // char *json_payload = cJSON_Print(json);
-        // pubmsg.payload = json_payload;
-        // pubmsg.payloadlen = strlen(json_payload);
-        // pubmsg.qos = 0;
-        // pubmsg.retained = 0;
-        // MQTTClient_publishMessage(mqttClient, topic, &pubmsg, &token);
-        // // printf("Publish to %s\n", topic);
-        // cJSON_free(json);
-        int msgLen = strlen(receivedMessage);
-        if (msgLen > 0) {
-            cJSON *json = cJSON_Parse(receivedMessage);
-            cJSON *command = cJSON_GetObjectItemCaseSensitive(json, "command");
-            // printf("Get Command \n%s\nis String : %d\n", receivedMessage,cJSON_IsString(command));
-            if (cJSON_IsString(command) && (command->valuestring != NULL)) {
-                char commandString[50];
-                strcpy(commandString, command->valuestring);
-                printf("Command -> %s\r\n", commandString);
-                pthread_mutex_lock(&audio_cond_mutex);
-                if (strcmp(commandString, "startRecord") == 0) {
-                    modeRecord = 1;
-                }
-                if (strcmp(commandString, "stopRecord") == 0) {
-                    modeRecord = 2;
-                }
-                if (strcmp(commandString, "normalRecord") == 0) {
-                    modeRecord = 0;
-                }
-                pthread_mutex_unlock(&audio_cond_mutex);
-            }
-            memset(receivedTopic, '\0', strlen(receivedTopic));
-            memset(receivedMessage, '\0', msgLen);
-            cJSON_Delete(command);
-        }
-        // sleep(1);
+    while (1) {
+        pthread_cond_wait(&mqtt_cond, &mqtt_cond_mutex);
+        
+        MQTTClient_message pubmsg = MQTTClient_message_initializer;
+        pubmsg.payload = mqttTransferPayload;
+        pubmsg.payloadlen = strlen(mqttTransferPayload);
+        pubmsg.qos = 2;
+        pubmsg.retained = 0;
+        rc = MQTTClient_publishMessage(mqttClient, topic, &pubmsg, &token);
+        printf("MQTT Client Publish Status : %d\r\n", rc);
     }
     MQTTClient_destroy(mqttClient);
 }
@@ -86,6 +54,28 @@ int messageArrived(void *context, char *topicName, int topicLen, MQTTClient_mess
     // printf("   message: %.*s\n", message->payloadlen, message->payload);
     strncpy(receivedMessage, (char *)message->payload, message->payloadlen);
     strcpy(receivedTopic, (char *)topicName);
+    cJSON *json = cJSON_Parse(receivedMessage);
+    cJSON *command = cJSON_GetObjectItemCaseSensitive(json, "command");
+    // printf("Get Command \n%s\nis String : %d\n", receivedMessage,cJSON_IsString(command));
+    if (cJSON_IsString(command) && (command->valuestring != NULL)) {
+        char commandString[50];
+        strcpy(commandString, command->valuestring);
+        printf("Command -> %s\r\n", commandString);
+        pthread_mutex_lock(&audio_cond_mutex);
+        if (strcmp(commandString, "startRecord") == 0) {
+            modeRecord = 1;
+        }
+        if (strcmp(commandString, "stopRecord") == 0) {
+            modeRecord = 2;
+        }
+        if (strcmp(commandString, "normalRecord") == 0) {
+            modeRecord = 0;
+        }
+        pthread_mutex_unlock(&audio_cond_mutex);
+    }
+    memset(receivedTopic, '\0', strlen(receivedTopic));
+    memset(receivedMessage, '\0', message->payloadlen);
+    cJSON_Delete(command);
     MQTTClient_freeMessage(&message);
     MQTTClient_free(topicName);
     return 1;
