@@ -60,13 +60,13 @@ void *mqtt_thread(void *) {
                 strcpy(commandString, command->valuestring);
                 printf("Command -> %s\r\n", commandString);
                 pthread_mutex_lock(&audio_cond_mutex);
-                if (strcmp(commandString,"startRecord") == 0){
+                if (strcmp(commandString, "startRecord") == 0) {
                     modeRecord = 1;
                 }
-                if (strcmp(commandString,"stopRecord") == 0){
+                if (strcmp(commandString, "stopRecord") == 0) {
                     modeRecord = 2;
                 }
-                if (strcmp(commandString,"normalRecord") == 0){
+                if (strcmp(commandString, "normalRecord") == 0) {
                     modeRecord = 0;
                 }
                 pthread_mutex_unlock(&audio_cond_mutex);
@@ -104,7 +104,7 @@ void setupMQTT(MQTTClient *mqttClient) {
     conn_opts.password = "2816888888";
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
-
+    MQTTClient_deliveryToken token;
     char subscribeTopic[100];
     int rc;
     if ((rc = MQTTClient_connect(*mqttClient, &conn_opts)) != MQTTCLIENT_SUCCESS) {
@@ -114,6 +114,22 @@ void setupMQTT(MQTTClient *mqttClient) {
         }
         exit(EXIT_FAILURE);
     }
+
+    float value;
+
+    // printf("Shared data: %d\n", shared_value);
+    MQTTClient_message pubmsg = MQTTClient_message_initializer;
+
+    sprintf(subscribeTopic, "%s/%s/%s", base_topic, localSerialNumber, "status");
+    cJSON *json = cJSON_CreateObject();
+    cJSON_AddStringToObject(json, "statue", "online");
+    char *json_payload = cJSON_PrintUnformatted(json);
+    pubmsg.payload = json_payload;
+    pubmsg.payloadlen = strlen(json_payload);
+    pubmsg.qos = 0;
+    pubmsg.retained = 0;
+    rc = MQTTClient_publishMessage(*mqttClient, subscribeTopic, &pubmsg, &token);
+    printf("MQTT Client Publish Status : %d\r\n", rc);
 
     sprintf(subscribeTopic, "%s/%s/%s", base_topic, localSerialNumber, "command");
     printf("Subscribing -> %s\n", subscribeTopic);
