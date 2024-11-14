@@ -1,6 +1,7 @@
 #include "../main.h"
 
 void *file_upload_thread(void *) {
+    char timeStampBuffer[50];
     while (1) {
         printf("Waiting for file name to upload\n");
         pthread_cond_wait(&http_cond, &http_cond_mutex);
@@ -10,6 +11,9 @@ void *file_upload_thread(void *) {
         cJSON *json = cJSON_CreateObject();
         cJSON_AddStringToObject(json, "report_state", "uploaded_commanded_record");
         cJSON_AddStringToObject(json, "filename", httpFilePath);
+        getTimeStamp(timeStampBuffer);
+        cJSON_AddStringToObject(json, "timestamp", timeStampBuffer);
+
         pthread_mutex_lock(&mqtt_cond_mutex);
         strcpy(mqttTransferPayload, cJSON_PrintUnformatted(json));
         pthread_cond_signal(&mqtt_cond);

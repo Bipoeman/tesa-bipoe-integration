@@ -2,6 +2,15 @@
 #include "./wav_file.h"
 #define DATA_SIZE 960000
 const char *dbPath = "./db/audio_capture.db";
+
+void getTimeStamp(char *buffer) {
+    time_t raw_time;
+    struct tm *time_info;
+    time(&raw_time);
+    time_info = gmtime(&raw_time);
+    strftime(buffer, 50, "%Y-%m-%dT%H:%M:%SZ", time_info);
+}
+
 void *save_audio_thread(void *) {
     printf("Save Audio Thread\n");
     int fileIndex;
@@ -32,6 +41,7 @@ void *save_audio_thread(void *) {
     FILE *audioCaptureFile;
     int fileOpenned = 0;
     char filename[100];
+    char timeStampBuffer[50];
 
     for (;;) {
         pthread_cond_wait(&audio_cond, &audio_cond_mutex);
@@ -72,8 +82,10 @@ void *save_audio_thread(void *) {
                     printf("Start recording '%s'\n", filename);
 
                     cJSON *json = cJSON_CreateObject();
+                    getTimeStamp(timeStampBuffer);
                     cJSON_AddStringToObject(json, "report_state", "audio_detected");
                     cJSON_AddStringToObject(json, "filename", filename);
+                    cJSON_AddStringToObject(json, "timestamp", timeStampBuffer);
                     pthread_mutex_lock(&mqtt_cond_mutex);
                     strcpy(mqttTransferPayload, cJSON_PrintUnformatted(json));
                     pthread_cond_signal(&mqtt_cond);
@@ -94,6 +106,8 @@ void *save_audio_thread(void *) {
                         cJSON *json = cJSON_CreateObject();
                         cJSON_AddStringToObject(json, "report_state", "detected_audio_saved");
                         cJSON_AddStringToObject(json, "filename", filename);
+                        getTimeStamp(timeStampBuffer);
+                        cJSON_AddStringToObject(json, "timestamp", timeStampBuffer);
                         pthread_mutex_lock(&mqtt_cond_mutex);
                         strcpy(mqttTransferPayload, cJSON_PrintUnformatted(json));
                         pthread_cond_signal(&mqtt_cond);
@@ -130,6 +144,8 @@ void *save_audio_thread(void *) {
                 cJSON *json = cJSON_CreateObject();
                 cJSON_AddStringToObject(json, "report_state", "start_record_command");
                 cJSON_AddStringToObject(json, "filename", filename);
+                getTimeStamp(timeStampBuffer);
+                cJSON_AddStringToObject(json, "timestamp", timeStampBuffer);
                 pthread_mutex_lock(&mqtt_cond_mutex);
                 strcpy(mqttTransferPayload, cJSON_PrintUnformatted(json));
                 pthread_cond_signal(&mqtt_cond);
@@ -158,6 +174,8 @@ void *save_audio_thread(void *) {
                 cJSON *json = cJSON_CreateObject();
                 cJSON_AddStringToObject(json, "report_state", "stop_record_command");
                 cJSON_AddStringToObject(json, "filename", filename);
+                getTimeStamp(timeStampBuffer);
+                cJSON_AddStringToObject(json, "timestamp", timeStampBuffer);
                 pthread_mutex_lock(&mqtt_cond_mutex);
                 strcpy(mqttTransferPayload, cJSON_PrintUnformatted(json));
                 pthread_cond_signal(&mqtt_cond);
