@@ -57,6 +57,7 @@ void *audio_input_thread(void *) {
         pthread_cond_signal(&audio_cond);
         pthread_mutex_unlock(&audio_cond_mutex);
         
+        
         // if ()
         // float avg_val = 0.0;
         // for (int j = 0; j < 4800; j++) {

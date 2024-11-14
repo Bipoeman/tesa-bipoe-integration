@@ -34,6 +34,7 @@ void *ml_thread(void*);
 void *file_upload_thread(void*);
 long long timeInMilliseconds(void);
 int threshold_detect(short *input,int size,int threshold);
+int detectSync(short *dataIn,int size,int threshold);
 int upload_file_to_http(const char *url, const char *file_path, const char *bearer_token, const char *timestamp, const char *device_id);
 
 void dbase_init(const char *db_name);

@@ -11,6 +11,15 @@ SRCS = main.c \
 	   ./operation/threshold_detect.c \
 	   ./prediction/ml_thr.c \
 	   ./db_helper/db_helper.c \
+	   ./fft/sound_freq.c \
+	   ./fft/abs.c \
+	   ./fft/sound_freq_initialize.c \
+	   ./fft/sound_freq_terminate.c \
+	   ./fft/rt_nonfinite.c \
+	   ./fft/rtGetNaN.c \
+	   ./fft/rtGetInf.c \
+	   ./fft/FFTImplementationCallback.c \
+
     #    ./network/network_func.c \
     #    ./utils/helper_func.c
 

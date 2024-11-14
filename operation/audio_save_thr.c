@@ -39,6 +39,12 @@ void *save_audio_thread(void *) {
             localBuf[i] = audio_buffer[i] << 4;
             // localBuf[i] = audio_buffer[i];
         }
+        int freqDetect = detectSync(localBuf,samplingSize,30);
+        if (freqDetect > 0){
+            if (abs(171 - freqDetect) <= 1){
+                printf("Start Detected %d\n",freqDetect);
+            }
+        }
         // printf("Found Audio From Thread Save Audio\n");
         if (modeRecord == 0) {
             int isAudio = threshold_detect(audio_buffer, samplingSize, 20);

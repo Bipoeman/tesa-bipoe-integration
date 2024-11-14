@@ -24,7 +24,7 @@ void *mqtt_thread(void *) {
     printf("Starting MQTT thread\n");
     MQTTClient mqttClient;
     MQTTClient_create(&mqttClient, MQTT_BROKER, mqtt_clientid, MQTTCLIENT_PERSISTENCE_NONE, NULL);
-    rc = MQTTClient_setCallbacks(mqttClient, (void *)&mqttClient, &connectionLost, &messageArrived, NULL);
+    rc = MQTTClient_setCallbacks(mqttClient, (void *)&mqttClient, (MQTTClient_connectionLost *)&connectionLost, (MQTTClient_messageArrived *)&messageArrived, NULL);
     printf("MQTT Client Set Callback Status : %d\r\n", rc);
     MQTTClient_deliveryToken token;
     setupMQTT(&mqttClient);

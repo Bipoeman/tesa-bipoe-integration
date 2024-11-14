@@ -35,7 +35,7 @@ int main(int argc,char **argv){
     cJSON_free(name);
 
     pthread_mutex_init(&audio_cond_mutex,NULL);
-    pthread_cond_init(&audio_cond,&audio_cond_mutex);
+    pthread_cond_init(&audio_cond,NULL);
 
     printf("Serial Number of this board is -> %s\n",serialNumber);
 
