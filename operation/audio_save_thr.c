@@ -23,7 +23,7 @@ void *save_audio_thread(void *) {
     int lastIsFound = 0;
 
     short localBuf[DATA_SIZE];
-    int bufIndex = 0;
+    uint32_t bufIndex = 0;
     int isCapture = 0;
     wav_header wavh;
     strncpy(wavh.riff, "RIFF", 4);
@@ -46,9 +46,10 @@ void *save_audio_thread(void *) {
     for (;;) {
         pthread_cond_wait(&audio_cond, &audio_cond_mutex);
         for (int i = 0; i < samplingSize; i++) {
-            localBuf[i] = audio_buffer[i] << 2;
+            localBuf[i] = audio_buffer[i] << 3;
             // localBuf[i] = audio_buffer[i];
         }
+        bufIndex += samplingSize;
         int freqDetect = detectSync(localBuf, samplingSize, 70);
         if (freqDetect > 0) {
             if (abs(171 - freqDetect) <= 1) {
@@ -112,6 +113,7 @@ void *save_audio_thread(void *) {
                     printf("Audio Silenced, stop record\n");
                     if (fileOpenned) {
                         fclose(audioCaptureFile);
+                        bufIndex = 0;
 
                         cJSON *json = cJSON_CreateObject();
                         cJSON_AddStringToObject(json, "report_state", "detected_audio_saved");
@@ -168,6 +170,7 @@ void *save_audio_thread(void *) {
         } else if (modeRecord == 2) {
             if (fileOpenned) {
                 fclose(audioCaptureFile);
+                bufIndex = 0;
                 struct stat st;
                 stat(filename, &st);
                 char dataSize[20];
