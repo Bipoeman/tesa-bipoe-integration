@@ -6,7 +6,7 @@ void *audio_input_thread(void *) {
     printf("Audio Thread\n");
     int i;
     int err;
-    short buf[9600];
+    short buf[samplingSize];
     snd_pcm_t *capture_handle;
     snd_pcm_hw_params_t *hw_params;
     snd_pcm_sw_params_t *sw_params;
@@ -51,11 +51,14 @@ void *audio_input_thread(void *) {
             exit(1);
         }
         pthread_mutex_lock(&audio_cond_mutex);
+        pthread_mutex_lock(&ml_cond_mutex);
         for (int i = 0;i<samplingSize;i++){
             audio_buffer[i] = buf[i];
         }
         pthread_cond_signal(&audio_cond);
+        pthread_cond_signal(&ml_cond);
         pthread_mutex_unlock(&audio_cond_mutex);
+        pthread_mutex_unlock(&ml_cond_mutex);
         
         
         // if ()

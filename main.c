@@ -1,7 +1,7 @@
 #include "main.h"
 
 char serialNumber[100];
-const int samplingSize = 4800;
+const int samplingSize = 48000;
 const int samplingRate = 48000;
 
 char mqttTransferPayload[512];
@@ -13,7 +13,9 @@ pthread_cond_t  audio_cond;
 pthread_mutex_t audio_cond_mutex;
 pthread_cond_t  http_cond;
 pthread_mutex_t http_cond_mutex;
-short audio_buffer[9600];
+pthread_cond_t  ml_cond;
+pthread_mutex_t ml_cond_mutex;
+short audio_buffer[48000];
 
                         // upload_file_to_http("https://pvhlxgc5-8080.asse.devtunnels.ms/sound/",filename,);
 const char http_server_url[100] = "https://pvhlxgc5-8080.asse.devtunnels.ms/sound/";

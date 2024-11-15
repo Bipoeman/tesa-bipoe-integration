@@ -20,7 +20,9 @@ extern pthread_cond_t  audio_cond;
 extern pthread_mutex_t audio_cond_mutex;
 extern pthread_cond_t  http_cond;
 extern pthread_mutex_t http_cond_mutex;
-extern short audio_buffer[9600];
+extern pthread_cond_t  ml_cond;
+extern pthread_mutex_t ml_cond_mutex;
+extern short audio_buffer[48000];
 
 extern const int samplingSize;
 extern const int samplingRate;

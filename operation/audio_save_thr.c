@@ -46,13 +46,23 @@ void *save_audio_thread(void *) {
     for (;;) {
         pthread_cond_wait(&audio_cond, &audio_cond_mutex);
         for (int i = 0; i < samplingSize; i++) {
-            localBuf[i] = audio_buffer[i] << 4;
+            localBuf[i] = audio_buffer[i] << 2;
             // localBuf[i] = audio_buffer[i];
         }
-        int freqDetect = detectSync(localBuf, samplingSize, 30);
+        int freqDetect = detectSync(localBuf, samplingSize, 70);
         if (freqDetect > 0) {
             if (abs(171 - freqDetect) <= 1) {
                 printf("Start Detected %d\n", freqDetect);
+                cJSON *json = cJSON_CreateObject();
+                getTimeStamp(timeStampBuffer);
+                cJSON_AddStringToObject(json, "report_state", "sync_signal_detected");
+                cJSON_AddStringToObject(json, "filename", filename);
+                cJSON_AddStringToObject(json, "timestamp", timeStampBuffer);
+                pthread_mutex_lock(&mqtt_cond_mutex);
+                strcpy(mqttTransferPayload, cJSON_PrintUnformatted(json));
+                pthread_cond_signal(&mqtt_cond);
+                pthread_mutex_unlock(&mqtt_cond_mutex);
+                cJSON_Delete(json);
             }
         }
         // printf("Found Audio From Thread Save Audio\n");

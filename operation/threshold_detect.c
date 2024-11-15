@@ -15,7 +15,9 @@ int threshold_detect(short *input, int size, int threshold) {
 int detectSync(short *dataIn, int size, int threshold) {
     int indexFound = -1;
     for (int i = 0; i < size; i++) {
+        // printf("%d\n",dataIn[i]);
         if (dataIn[i] > threshold) {
+            // printf("Threshold Hit %d\n",dataIn[i]);
             indexFound = i;
             break;  // Stop after the first match
         }
@@ -31,11 +33,11 @@ int detectSync(short *dataIn, int size, int threshold) {
     }
     double waveData[4096];  // Adjusted size to halfSize
     double spectrum[2048];
-    for (int i = 0; i < halfSize; i++) {
-        waveData[i] = 0.00001;
-    }
+    // for (int i = 0; i < 4096; i++) {
+    //     waveData[i] = 0.0;
+    // }
     for (int i = 0; i < 4096; i++) {
-        waveData[i] = fabs((dataIn[i] << 4) / 32768.0);  // Make sure shift and scale are correct
+        waveData[i] = fabs((dataIn[i+indexFound]) / 32768.0);  // Make sure shift and scale are correct
     }
     sound_freq(waveData, spectrum);
     double max = -DBL_MAX;
