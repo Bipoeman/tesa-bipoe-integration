@@ -48,5 +48,6 @@ void dbase_init(const char *db_name);
 int dbase_append(const char *db_name, int value);
 int dbase_query(const char *db_name);
 int insert_value(const char *db_name, const char *table_name, const char *value);
+int insert_value_command(const char *db_name, const char *table_name, const char *value);
 
 extern char serialNumber[100];

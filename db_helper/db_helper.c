@@ -61,6 +61,7 @@ int insert_value(const char *db_name, const char *table_name, const char *value)
     char *err_msg = NULL;
     int rc;
     // Open the SQLite database
+    printf("BO\n");
     rc = sqlite3_open(db_name, &db);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
@@ -72,6 +73,36 @@ int insert_value(const char *db_name, const char *table_name, const char *value)
     snprintf(sql, sizeof(sql), "INSERT INTO %s (filename) VALUES ('%s');", table_name, value);
     // Execute the SQL insert statement
     rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
+
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "SQL error: %s\n", err_msg);
+        sqlite3_free(err_msg);
+        sqlite3_close(db);
+        return 1;
+    }
+    printf("Value inserted successfully\n");
+    // Close the SQLite database
+    sqlite3_close(db);
+    return 0;
+}
+int insert_value_command(const char *db_name, const char *table_name, const char *value) {
+    sqlite3 *db;
+    char *err_msg = NULL;
+    int rc;
+    // Open the SQLite database
+    printf("BO\n");
+    rc = sqlite3_open(db_name, &db);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return 1;
+    }
+    // Prepare the SQL insert statement
+    char sql[256];
+    snprintf(sql, sizeof(sql), "INSERT INTO %s (command) VALUES ('%s');", table_name, value);
+    // Execute the SQL insert statement
+    rc = sqlite3_exec(db, sql, 0, 0, &err_msg);
+
     if (rc != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", err_msg);
         sqlite3_free(err_msg);

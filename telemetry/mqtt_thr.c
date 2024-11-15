@@ -62,6 +62,7 @@ int messageArrived(void *context, char *topicName, int topicLen, MQTTClient_mess
         strcpy(commandString, command->valuestring);
         printf("Command -> %s\r\n", commandString);
         pthread_mutex_lock(&audio_cond_mutex);
+        insert_value_command("./db/command.db","command",commandString);
         if (strcmp(commandString, "startRecord") == 0) {
             modeRecord = 1;
         }
